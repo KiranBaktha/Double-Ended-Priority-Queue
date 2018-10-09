@@ -2,26 +2,30 @@ import itertools
 import math
 
 
-class DEQ:
+class DEPQ:
     def __init__(self):
         self.pq = []  # List of entries arranged in a heap
         self.entry_finder = {}  # Mapping of task to entries
         self.counter = itertools.count()  # unique sequence count
         self.REMOVED = '<removed-task>'  # Placeholder for removed task
+        self.tracker = 0  # Tracks the number of valid elements in the queue
 
     def add_task(self, task, priority=0):
         'Add a new task or update the priority of an existing task'
         if task in self.entry_finder:
             self.remove_task(task)
+            self.tracker -= 1
         count = next(self.counter)
         entry = [priority, count, task]
         self.entry_finder[task] = entry
         self.heappush(entry)
+        self.tracker += 1
 
     def remove_task(self, task):
         'Mark an existing task as REMOVED.  Raise KeyError if not found.'
         entry = self.entry_finder.pop(task)
         entry[-1] = self.REMOVED
+        self.tracker -= 1
 
     def pop_min_task(self, peek_call=False):
         'Remove and return the lowest priority task. Raise KeyError if empty.'
@@ -30,6 +34,7 @@ class DEQ:
             if task is not self.REMOVED:
                 if peek_call:
                     return [priority, count, task]
+                self.tracker -= 1
                 del self.entry_finder[task]
                 return task
         raise KeyError('pop from an empty priority queue')
@@ -41,6 +46,7 @@ class DEQ:
             if task is not self.REMOVED:
                 if peek_call:
                     return [priority, count, task]
+                self.tracker -= 1
                 del self.entry_finder[task]
                 return task
         raise KeyError('pop from an empty priority queue')
@@ -95,7 +101,7 @@ class DEQ:
         'sift up for an element in the min level'
         parent = math.ceil(index/2)-1
         grand_parent = math.ceil(parent/2)-1  # Next min level is 2 levels up
-        while grand_parent > 0:
+        while grand_parent >= 0:
             if self.pq[grand_parent] > self.pq[index]:
                 self.pq[grand_parent], self.pq[index] = self.pq[index], self.pq[grand_parent]
                 parent = math.ceil(grand_parent/2)-1
@@ -107,7 +113,7 @@ class DEQ:
         'sift up for an element in the max level'
         parent = math.ceil(index/2)-1
         grand_parent = math.ceil(parent/2)-1  # Next max level is 2 levels up
-        while grand_parent > 0:
+        while grand_parent >= 0:
             if self.pq[grand_parent] < self.pq[index]:
                 self.pq[grand_parent], self.pq[index] = self.pq[index], self.pq[grand_parent]
                 parent = math.ceil(grand_parent/2)-1
@@ -183,4 +189,6 @@ class DEQ:
             if max_index != 0:
                 self.pq[index], self.pq[gc[max_index-1]] = self.pq[gc[max_index-1]], self.pq[index]
                 self.maxify_down(gc[max_index-1])
-                
+
+    def empty(self):
+        return self.tracker == 0
